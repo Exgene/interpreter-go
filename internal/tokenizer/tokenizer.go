@@ -2,6 +2,7 @@ package tokenizer
 
 import (
 	"fmt"
+	"strconv"
 	"unicode"
 	"unicode/utf8"
 )
@@ -35,11 +36,12 @@ type Tokenizer struct {
 	src_code string
 }
 
-func peek(tokenizer *Tokenizer, ahead int) (string, error) {
+func (tokenizer *Tokenizer) peek(ahead int) rune {
 	if tokenizer.idx+ahead > len(tokenizer.src_code) {
-		return "", fmt.Errorf("Cant peek ahead of string of size (%d): with ahead (%d)", len(tokenizer.src_code), ahead)
+		fmt.Errorf("Shouldnt happen")
 	}
-	return string(tokenizer.src_code[tokenizer.idx+ahead-1]), nil
+	c, _ := utf8.DecodeRuneInString(tokenizer.src_code[tokenizer.idx+ahead-1:])
+	return c
 }
 
 func NewTokenizer(source string) *Tokenizer {
@@ -71,9 +73,9 @@ func (t *Tokenizer) scanToken() {
 	case c == '=':
 		t.addToTokensArray(Token{kind: TokenType(Equals), value: nil})
 	case unicode.IsNumber(c):
-		t.scanNumber()
+		t.scanNumber(c)
 	case unicode.IsLetter(c):
-		t.scanLiteral()
+		t.scanLiteral(c)
 	}
 
 }
@@ -82,12 +84,41 @@ func (t *Tokenizer) addToTokensArray(token Token) {
 	t.tokens = append(t.tokens, token)
 }
 
-func (t *Tokenizer) scanLiteral() {
-
+func isKeyword(word string) (TokenType, bool) {
+	keyword, exists := keywords[word]
+	return keyword, exists
 }
 
-func (t *Tokenizer) scanNumber() {
+func (t *Tokenizer) scanLiteral(c rune) {
+	t.buf += string(c)
+	for !t.isAtEnd() && unicode.IsLetter(t.peek(1)) {
+		t.buf += string(t.next())
+	}
 
+	tokenType, isBufAKeyword := isKeyword(t.buf)
+
+	if isBufAKeyword {
+		t.addToTokensArray(Token{kind: tokenType, value: nil})
+	} else {
+		t.addToTokensArray(Token{kind: TokenType(Identifier), value: nil})
+	}
+
+	t.buf = ""
+}
+
+func (t *Tokenizer) scanNumber(c rune) {
+	t.buf += string(c)
+	for !t.isAtEnd() && unicode.IsNumber(t.peek(1)) {
+		t.buf += string(t.next())
+	}
+	value, err := strconv.ParseFloat(t.buf, 32)
+	value32 := float32(value)
+	if err != nil {
+		fmt.Errorf("Error parsing float from buf, (%s)::", t.buf)
+	}
+	valuePtr := &value32
+	t.addToTokensArray(Token{kind: Numeric, value: valuePtr})
+	t.buf = ""
 }
 
 func (t *Tokenizer) next() rune {
@@ -99,18 +130,27 @@ func (t *Tokenizer) next() rune {
 	return r
 }
 
-func ScanTokens(t *Tokenizer) []Token {
+func (t *Tokenizer) ScanTokens() []Token {
 	for !t.isAtEnd() {
 		t.scanToken()
 	}
 
-	t.tokens = append(t.tokens, Token{TokenType(EOF), nil})
+	t.addToTokensArray(Token{TokenType(EOF), nil})
 	return t.tokens
+}
+
+func (t Token) String() string {
+	return fmt.Sprintf("Token{Type: %d, Lexeme: %f", t.kind, t.value)
 }
 
 func is_skippable(char rune) bool {
 	return unicode.IsSpace(char)
 }
 
-func Tokenize(tokenizer Tokenizer, code string) {
+func Tokenize(code string) {
+	tokenizer := NewTokenizer(code)
+	tokens := tokenizer.ScanTokens()
+	for _, token := range tokens {
+		token.String()
+	}
 }
