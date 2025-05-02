@@ -1,0 +1,127 @@
+package tokenizer
+
+import (
+	"fmt"
+	"strconv"
+	"unicode"
+	"unicode/utf8"
+)
+
+func (tokenizer *Tokenizer) peek(ahead int) rune {
+	if tokenizer.idx+ahead > len(tokenizer.src_code) {
+		// IM USING THIS AS AN ASSERT UNTIL I FIGURE OUT GO!!!!
+		fmt.Println("Shouldnt happen")
+	}
+	c, _ := utf8.DecodeRuneInString(tokenizer.src_code[tokenizer.idx+ahead-1:])
+	return c
+}
+
+func (t *Tokenizer) isAtEnd() bool {
+	if t.idx >= len(t.src_code) {
+		return true
+	}
+	return false
+}
+
+func (t *Tokenizer) scanToken() error {
+	c := t.next()
+
+	for !t.isAtEnd() && is_skippable(t.peek(1)) {
+		t.next()
+	}
+
+	if t.isAtEnd() {
+		return nil
+	}
+
+	switch {
+	case c == '(':
+		t.addToTokensArray(Token{kind: TokenType(OpenParen), value: c})
+	case c == ')':
+		t.addToTokensArray(Token{kind: TokenType(ClosedParen), value: c})
+	case c == '+' || c == '-' || c == '/' || c == '*' || c == '%':
+		t.addToTokensArray(Token{kind: TokenType(BinaryOperator), value: c})
+	case c == '=':
+		t.addToTokensArray(Token{kind: TokenType(Equals), value: string(c)})
+	case c == '{':
+		t.addToTokensArray(Token{kind: TokenType(OpenCurlyBracket), value: string(c)})
+	case c == '}':
+		t.addToTokensArray(Token{kind: TokenType(ClosedCurlyBracket), value: string(c)})
+	case c == '"':
+		t.buf = ""
+		for !t.isAtEnd() && t.peek(1) != '"' {
+			t.buf += string(t.next())
+		}
+
+		if t.isAtEnd() {
+			return fmt.Errorf("Missing \" value in the string, buf: {%v}", t.buf)
+		}
+
+	case unicode.IsNumber(c):
+		err := t.scanNumber(c)
+		if err != nil {
+			println("Error while tokenization of number %v", err.Error())
+		}
+	case unicode.IsLetter(c):
+		t.scanLiteral(c)
+	}
+
+	return nil
+}
+
+func (t *Tokenizer) addToTokensArray(token Token) {
+	t.tokens = append(t.tokens, token)
+}
+
+func (t *Tokenizer) scanLiteral(c rune) {
+	t.buf += string(c)
+	for !t.isAtEnd() && unicode.IsLetter(t.peek(1)) {
+		t.buf += string(t.next())
+	}
+
+	tokenType, isBufAKeyword := isKeyword(t.buf)
+
+	if isBufAKeyword {
+		t.addToTokensArray(Token{kind: tokenType, value: t.buf})
+	} else {
+		t.addToTokensArray(Token{kind: TokenType(Identifier), value: t.buf})
+	}
+
+	t.buf = ""
+}
+
+func (t *Tokenizer) scanNumber(c rune) error {
+	t.buf += string(c)
+	for !t.isAtEnd() && unicode.IsNumber(t.peek(1)) {
+		t.buf += string(t.next())
+	}
+	value, err := strconv.ParseFloat(t.buf, 32)
+	value32 := float32(value)
+	if err != nil {
+		return fmt.Errorf("Error parsing float from buf, (%s)::", t.buf)
+	}
+	t.addToTokensArray(Token{kind: Numeric, value: value32})
+	t.buf = ""
+	return nil
+}
+
+func (t *Tokenizer) next() rune {
+	if t.isAtEnd() {
+		return 0
+	}
+	r, _ := utf8.DecodeRuneInString(t.src_code[t.idx:])
+	t.idx += 1
+	return r
+}
+
+func (t *Tokenizer) ScanTokens() []Token {
+	for !t.isAtEnd() {
+		err := t.scanToken()
+		if err != nil {
+			fmt.Printf("Error while parsing tokens...%v", err)
+		}
+	}
+
+	t.addToTokensArray(Token{TokenType(EOF), "EOF"})
+	return t.tokens
+}
