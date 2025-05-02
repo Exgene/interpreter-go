@@ -1,7 +1,8 @@
 package main
 
-import "github.com/exgene/forge/internal/tokenizer"
+import "github.com/exgene/forge/internal/repl"
+
 
 func main() {
-	tokenizer.TokenizeShit("Hello World")
+	repl.ReadValue()
 }
