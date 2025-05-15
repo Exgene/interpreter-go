@@ -3,7 +3,6 @@ package repl
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"os"
 	"os/signal"
 	"strings"
@@ -19,21 +18,24 @@ func ReadValue() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	inputChan := make(chan string)
-	errChan := make(chan error, 1) 
+	done := false
 
 	go func() {
 		reader := bufio.NewReader(os.Stdin)
 		for {
-			fmt.Print("> ")
+			if !done {
+				continue
+			}
+			fmt.Printf("> ")
 			text, err := reader.ReadString('\n')
 			if err != nil {
-				errChan <- err
-				close(inputChan)
-				return
+				fmt.Printf("Error while reading from stdin: %v", err)
 			}
 			inputChan <- text
 		}
 	}()
+
+	done = true
 
 	for {
 		select {
@@ -41,22 +43,8 @@ func ReadValue() {
 			fmt.Printf("\nReceived signal: %v. Exiting.\n", sig)
 			fmt.Println("Finished Running or interrupted")
 			return
-
-		case text, ok := <-inputChan:
-			if !ok {
-				select {
-				case err := <-errChan:
-					if err != io.EOF {
-						fmt.Fprintf(os.Stderr, "\nInput error: %v\n", err)
-					} else {
-						fmt.Println("\nInput closed (EOF).")
-					}
-				default:
-					fmt.Println("\nInput closed.")
-				}
-				fmt.Println("Finished Running or interrupted")
-				return
-			}
+		case text := <-inputChan:
+			done = false
 			processedText := strings.TrimSpace(text)
 			if processedText == "" {
 				continue
@@ -64,15 +52,8 @@ func ReadValue() {
 			tokenizerObj := tokenizer.NewTokenizer(processedText)
 			tokens := tokenizerObj.ScanTokens()
 			fmt.Printf("Tokens: %v\n", tokens)
-
-		case err := <-errChan:
-			if err == io.EOF {
-				fmt.Println("\nInput stream closed (EOF).")
-			} else {
-				fmt.Fprintf(os.Stderr, "\nError reading input: %v\n", err)
-			}
-			fmt.Println("Finished Running or interrupted")
-			return
+			done = true
+		default:
 		}
 	}
 }
