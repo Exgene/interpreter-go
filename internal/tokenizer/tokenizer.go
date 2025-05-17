@@ -6,7 +6,7 @@ import (
 )
 
 var keywords = map[string]TokenType{
-	"let": Let,
+	"let":   Let,
 	"const": Const,
 }
 
@@ -43,7 +43,7 @@ func (t TokenType) String() string {
 }
 
 func (t Token) String() string {
-	return fmt.Sprintf("Token{Type: %v, Value: %v}", t.kind, t.value)
+	return fmt.Sprintf("Token{Type: %v, Value: %v}", t.Kind, t.Value)
 }
 
 func is_skippable(char rune) bool {

@@ -18,8 +18,8 @@ const (
 )
 
 type Token struct {
-	kind  TokenType
-	value any
+	Kind  TokenType
+	Value any
 }
 
 type Tokenizer struct {

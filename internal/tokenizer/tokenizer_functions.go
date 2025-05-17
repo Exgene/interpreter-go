@@ -36,17 +36,17 @@ func (t *Tokenizer) scanToken() error {
 
 	switch {
 	case c == '(':
-		t.addToTokensArray(Token{kind: TokenType(OpenParen), value: c})
+		t.addToTokensArray(Token{Kind: TokenType(OpenParen), Value: c})
 	case c == ')':
-		t.addToTokensArray(Token{kind: TokenType(ClosedParen), value: c})
+		t.addToTokensArray(Token{Kind: TokenType(ClosedParen), Value: c})
 	case c == '+' || c == '-' || c == '/' || c == '*' || c == '%':
-		t.addToTokensArray(Token{kind: TokenType(BinaryOperator), value: c})
+		t.addToTokensArray(Token{Kind: TokenType(BinaryOperator), Value: c})
 	case c == '=':
-		t.addToTokensArray(Token{kind: TokenType(Equals), value: string(c)})
+		t.addToTokensArray(Token{Kind: TokenType(Equals), Value: string(c)})
 	case c == '{':
-		t.addToTokensArray(Token{kind: TokenType(OpenCurlyBracket), value: string(c)})
+		t.addToTokensArray(Token{Kind: TokenType(OpenCurlyBracket), Value: string(c)})
 	case c == '}':
-		t.addToTokensArray(Token{kind: TokenType(ClosedCurlyBracket), value: string(c)})
+		t.addToTokensArray(Token{Kind: TokenType(ClosedCurlyBracket), Value: string(c)})
 	case c == '"':
 		t.buf = ""
 		for !t.isAtEnd() && t.peek(1) != '"' {
@@ -82,9 +82,9 @@ func (t *Tokenizer) scanLiteral(c rune) {
 	tokenType, isBufAKeyword := isKeyword(t.buf)
 
 	if isBufAKeyword {
-		t.addToTokensArray(Token{kind: tokenType, value: t.buf})
+		t.addToTokensArray(Token{Kind: tokenType, Value: t.buf})
 	} else {
-		t.addToTokensArray(Token{kind: TokenType(Identifier), value: t.buf})
+		t.addToTokensArray(Token{Kind: TokenType(Identifier), Value: t.buf})
 	}
 
 	t.buf = ""
@@ -100,7 +100,7 @@ func (t *Tokenizer) scanNumber(c rune) error {
 	if err != nil {
 		return fmt.Errorf("Error parsing float from buf, (%s)::", t.buf)
 	}
-	t.addToTokensArray(Token{kind: Numeric, value: value32})
+	t.addToTokensArray(Token{Kind: Numeric, Value: value32})
 	t.buf = ""
 	return nil
 }
