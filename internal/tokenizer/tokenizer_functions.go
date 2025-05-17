@@ -2,7 +2,6 @@ package tokenizer
 
 import (
 	"fmt"
-	"strconv"
 	"unicode"
 	"unicode/utf8"
 )
@@ -36,11 +35,11 @@ func (t *Tokenizer) scanToken() error {
 
 	switch {
 	case c == '(':
-		t.addToTokensArray(Token{Kind: TokenType(OpenParen), Value: c})
+		t.addToTokensArray(Token{Kind: TokenType(OpenParen), Value: string(c)})
 	case c == ')':
-		t.addToTokensArray(Token{Kind: TokenType(ClosedParen), Value: c})
+		t.addToTokensArray(Token{Kind: TokenType(ClosedParen), Value: string(c)})
 	case c == '+' || c == '-' || c == '/' || c == '*' || c == '%':
-		t.addToTokensArray(Token{Kind: TokenType(BinaryOperator), Value: c})
+		t.addToTokensArray(Token{Kind: TokenType(BinaryOperator), Value: string(c)})
 	case c == '=':
 		t.addToTokensArray(Token{Kind: TokenType(Equals), Value: string(c)})
 	case c == '{':
@@ -95,12 +94,7 @@ func (t *Tokenizer) scanNumber(c rune) error {
 	for !t.isAtEnd() && unicode.IsNumber(t.peek(1)) {
 		t.buf += string(t.next())
 	}
-	value, err := strconv.ParseFloat(t.buf, 32)
-	value32 := float32(value)
-	if err != nil {
-		return fmt.Errorf("Error parsing float from buf, (%s)::", t.buf)
-	}
-	t.addToTokensArray(Token{Kind: Numeric, Value: value32})
+	t.addToTokensArray(Token{Kind: Numeric, Value: t.buf})
 	t.buf = ""
 	return nil
 }

@@ -8,7 +8,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/exgene/forge/internal/tokenizer"
+	"github.com/exgene/forge/internal/core"
+	// "github.com/exgene/forge/internal/tokenizer"
 )
 
 func ReadValue() {
@@ -26,7 +27,7 @@ func ReadValue() {
 			if !done {
 				continue
 			}
-			fmt.Printf("> ")
+			fmt.Printf("\n> ")
 			text, err := reader.ReadString('\n')
 			if err != nil {
 				fmt.Printf("Error while reading from stdin: %v", err)
@@ -49,9 +50,13 @@ func ReadValue() {
 			if processedText == "" {
 				continue
 			}
-			tokenizerObj := tokenizer.NewTokenizer(processedText)
-			tokens := tokenizerObj.ScanTokens()
-			fmt.Printf("Tokens: %v\n", tokens)
+			parser := core.NewParser()
+			astNodes := parser.ProduceAST(processedText)
+			core.PrintNode(astNodes, "")
+			fmt.Printf("AST Nodes: %v", astNodes)
+			// tokenizerObj := tokenizer.NewTokenizer(processedText)
+			// tokens := tokenizerObj.ScanTokens()
+			// fmt.Printf("Tokens: %v\n", tokens)
 			done = true
 		default:
 		}
