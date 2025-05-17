@@ -15,8 +15,9 @@ type Statement interface {
 }
 
 type Program struct {
-	body []Statement
+	Body []Statement
 }
+
 func (p *Program) Kind() NodeType { return ProgramNode }
 
 // Expression
@@ -27,9 +28,9 @@ type Expression interface {
 
 // BinaryExpression
 type BinaryExpression struct {
-	left     Expression
-	right    Expression
-	operator string
+	Left     Expression
+	Right    Expression
+	Operator string
 }
 
 func (b *BinaryExpression) Kind() NodeType {
@@ -39,7 +40,7 @@ func (b *BinaryExpression) ExprNode()
 
 // Identifier
 type Identifier struct {
-	symbol string
+	Symbol string
 }
 
 func (i *Identifier) Kind() NodeType {
@@ -50,7 +51,7 @@ func (i *Identifier) ExprNode()
 // NumericLiteral
 
 type NumericLiteral struct {
-	value any
+	Value any
 }
 
 func (n *NumericLiteral) Kind() NodeType {
