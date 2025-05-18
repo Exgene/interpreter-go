@@ -6,7 +6,7 @@ import (
 	"github.com/exgene/forge/internal/tokenizer"
 )
 
-func TestTokenizer_SimpleExpressions(t *testing.T) {
+func TestTokenizer(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
