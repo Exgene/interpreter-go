@@ -23,8 +23,6 @@ func (t *Tokenizer) isAtEnd() bool {
 }
 
 func (t *Tokenizer) scanToken() error {
-	c := t.next()
-
 	for !t.isAtEnd() && is_skippable(t.peek(1)) {
 		t.next()
 	}
@@ -32,6 +30,8 @@ func (t *Tokenizer) scanToken() error {
 	if t.isAtEnd() {
 		return nil
 	}
+
+	c := t.next()
 
 	switch {
 	case c == '(':
@@ -55,12 +55,10 @@ func (t *Tokenizer) scanToken() error {
 		if t.isAtEnd() {
 			return fmt.Errorf("Missing \" value in the string, buf: {%v}", t.buf)
 		}
-
+		t.addToTokensArray(Token{Kind: TokenType(String), Value: t.buf})
+		t.buf = ""
 	case unicode.IsNumber(c):
-		err := t.scanNumber(c)
-		if err != nil {
-			println("Error while tokenization of number %v", err.Error())
-		}
+		t.scanNumber(c)
 	case unicode.IsLetter(c):
 		t.scanLiteral(c)
 	}
@@ -89,14 +87,13 @@ func (t *Tokenizer) scanLiteral(c rune) {
 	t.buf = ""
 }
 
-func (t *Tokenizer) scanNumber(c rune) error {
+func (t *Tokenizer) scanNumber(c rune) {
 	t.buf += string(c)
 	for !t.isAtEnd() && unicode.IsNumber(t.peek(1)) {
 		t.buf += string(t.next())
 	}
 	t.addToTokensArray(Token{Kind: Numeric, Value: t.buf})
 	t.buf = ""
-	return nil
 }
 
 func (t *Tokenizer) next() rune {

@@ -17,9 +17,10 @@ func NewParser() *Parser {
 }
 
 func (p *Parser) notEof() bool {
+	if len(p.tokens) == 0 {
+		return false
+	}
 	token := p.tokens[0]
-// fmt.Printf("Im called with token %v\n", token)
-	// fmt.Printf("I resolve to ==> %v \n", token.Kind != tokenizer.EOF)
 	return token.Kind != tokenizer.EOF
 }
 
@@ -43,8 +44,12 @@ func (p *Parser) expect(t tokenizer.TokenType, err_msg string) (tokenizer.Token,
 }
 
 func (p *Parser) ProduceAST(source string) *Program {
+	fmt.Print(source)
 	t := tokenizer.NewTokenizer(source)
 	p.tokens = t.ScanTokens()
+	for _, token := range p.tokens {
+		fmt.Println(token.String())
+	}
 	program := &Program{Body: []Statement{}}
 	for p.notEof() {
 		program.Body = append(program.Body, p.parseStatement())
@@ -63,7 +68,7 @@ func (p *Parser) parseExpression() Expression {
 func (p *Parser) parseAdditiveExpression() Expression {
 	left := p.parseMultiplicativeExpression()
 
-	for p.at().Value == "+" || p.at().Value == "-" {
+	for p.notEof() && (p.at().Value == "+" || p.at().Value == "-") {
 		operator := p.next().Value
 		right := p.parseMultiplicativeExpression()
 		left = &BinaryExpression{
@@ -78,7 +83,7 @@ func (p *Parser) parseAdditiveExpression() Expression {
 func (p *Parser) parseMultiplicativeExpression() Expression {
 	left := p.parsePrimaryExpression()
 
-	for p.at().Value == "*" || p.at().Value == "/" || p.at().Value == "%" {
+	for p.notEof() && (p.at().Value == "*" || p.at().Value == "/" || p.at().Value == "%") {
 		operator := p.next().Value
 		right := p.parsePrimaryExpression()
 		left = &BinaryExpression{
@@ -91,24 +96,27 @@ func (p *Parser) parseMultiplicativeExpression() Expression {
 }
 
 func (p *Parser) parsePrimaryExpression() Expression {
-	token := p.next()
+	token := p.at()
 
 	switch token.Kind {
 	case tokenizer.Identifier:
-		return &Identifier{Symbol: token.Value}
+		return &Identifier{Symbol: p.next().Value}
 	case tokenizer.Numeric:
-		val, err := strconv.ParseFloat(token.Value, 64)
+		val, err := strconv.ParseFloat(p.next().Value, 64)
 		if err != nil {
 			fmt.Printf("Error parsing the float value {%v}\n", token)
 			os.Exit(1)
 		}
 		return &NumericLiteral{Value: val}
 	case tokenizer.OpenParen:
+		p.next()
 		value := p.parseExpression()
-		p.expect(tokenizer.ClosedParen, "Expected Closed parenthesis")
+		_, err := p.expect(tokenizer.ClosedParen, "Expected Closed parenthesis")
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 		return value
-	case tokenizer.EOF:
-		return nil	
 	default:
 		fmt.Printf("Idk what this token is bruh {%v}\n", token)
 		os.Exit(1)
