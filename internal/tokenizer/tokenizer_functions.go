@@ -113,6 +113,6 @@ func (t *Tokenizer) ScanTokens() []Token {
 		}
 	}
 
-	t.addToTokensArray(Token{TokenType(EOF), "EOF"})
+	t.addToTokensArray(Token{TokenType(EOF), ""})
 	return t.tokens
 }
